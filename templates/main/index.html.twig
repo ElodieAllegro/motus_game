@@ -1,0 +1,172 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Jeu du motus{% endblock %}
+
+{% block body %}
+
+
+  <div class="text-center mt-4">
+            <div class="row p-4 mb-3 ">
+                <h1 class="text-uppercase fw-bolder"> M <div class="d-inline-block mt-2" id="title1"></div> tus Game</h1>
+            </div>
+
+            <h2>But du jeu</h2>
+            <h4>Le but du jeu est de trouver le mot secret! vous avez 5 tentatives.
+            </h4>
+           
+            <div class="mt-4">
+                <button id="start-button" class="btn btn-success btn-lg">Recommencer</button>
+                <button class="btn btn-primary btn-lg" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">Voir le classement</button>
+            </div>
+    <div class="row">
+        <div class="col-md-6 mt-5 bg-info bg-gradiant bg-opacity-25 mb-5" id="game-container">
+            <div id="word-container" class="border border-4 border-warning my-4">
+                
+                
+            </div>
+            <div>
+                <label for="guess">Proposition: </label>
+                <input type="text" id="guess" maxlength="6">
+                <button class="btn btn-primary" id="guess-button">Proposer</button>
+            </div>
+        <div id="attempts">Tentatives restantes: 6</div>
+    </div>
+
+            <div class="col-6">
+                    {% if app.user %}
+                    <div class=" col-12 border border-4 border-warning mb-1">
+                        <h5 class="h3">Bonjour <span class="text-primary">{{ user.pseudo }} </span> content de te revoir !</h5>
+                        <h6 class="h3">Ton score actuel est de {{ user.score }} points</h6>
+                    </div>
+                      {% endif %}
+                    <div class="col-12 bg-info bg-gradiant bg-opacity-25 mt-2 " id="rules">
+                    
+                        <h4 class="text-center">Règles du jeu</h4>
+                        <li class="h5">Si une lettre est identique au mot secret le fond est rouge.
+                        </li>
+                        <li class="h5">Si une lettre est mal placé mais présente dans le mot, le fond est jaune.
+                        </li>
+                        <li class="h5">Si une lettre n'est pas dans le mot le fond est bleu.
+                        </li>
+                         
+                    </div>
+            </div>
+        </div> 
+        
+
+<div class="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasScrollingLabel">Classement des meilleurs joueurs</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <table class="table table-bordered bg-info bg-gradiant bg-opacity-25">
+        <thead>
+            <tr>
+                <th>Position</th>
+                <th>Pseudo</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for index, player in topPlayer %}
+                 <tr>
+                    <td>{{ index + 1 }}</td>
+                    <td>{{ player.pseudo }}</td>
+                    <td>{{ player.score }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+ </div>
+</div>            
+</div>
+
+<script>
+const startButton = document.getElementById('start-button');
+const gameContainer = document.getElementById('game-container');
+
+startButton.addEventListener('click', () => {
+    // Recharge la page pour redémarrer le jeu
+    window.location.reload();
+});
+
+// Le mot secret récupéré depuis PHP
+  const secretWord = "{{ secretWord }}";
+
+//nombre d'essai
+let remainingAttempts = 5;
+
+// Sélection des éléments HTML
+const wordContainer = document.getElementById('word-container');
+const guessInput = document.getElementById('guess');
+const guessButton = document.getElementById('guess-button');
+const attemptsContainer = document.getElementById('attempts');
+
+// Création de la première ligne de lettres avec la première lettre d'affichée
+const firstRow = document.createElement('div');
+firstRow.className = 'row';
+for (let i = 0; i < secretWord.length; i++) {
+    const letterBox = document.createElement('div');
+    letterBox.className = 'letter-box';
+    if (i === 0) {
+        letterBox.textContent = secretWord[0];
+        letterBox.style.backgroundColor = 'red';
+    }
+    firstRow.appendChild(letterBox);
+}
+wordContainer.appendChild(firstRow);
+
+guessButton.addEventListener('click', () => {
+    const guess = guessInput.value.toUpperCase();
+    if (guess.length !== secretWord.length) {
+        alert('Votre proposition doit contenir 6 lettres.');
+        return;
+    }
+    remainingAttempts--;
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    for (let i = 0; i < secretWord.length; i++) {
+        const letterBox = document.createElement('div');
+        letterBox.className = 'letter-box';
+        if (i === 0) {
+            letterBox.textContent = secretWord[0];
+            letterBox.style.backgroundColor = 'red';
+        } else if (guess[i] === secretWord[i]) {
+            letterBox.textContent = guess[i];
+            letterBox.style.backgroundColor = 'red';
+        } else if (secretWord.includes(guess[i]) && i !== 0 && guess[i] !== secretWord[i]) {
+            letterBox.textContent = guess[i];
+            letterBox.style.backgroundColor = 'yellow';
+            letterBox.style.borderRadius = '90px';
+        } else {
+            letterBox.textContent = guess[i];
+            letterBox.style.backgroundColor = 'blue';
+        }
+        row.appendChild(letterBox);
+    }
+    wordContainer.appendChild(row);
+    attemptsContainer.textContent = `Tentatives restantes: ${remainingAttempts}`;
+    if (guess === secretWord) {
+        alert('Bravo ! Vous avez deviné le mot secret.');
+        guessInput.disabled = true;
+        guessButton.disabled = true;
+        window.location.href = '/?win=true';
+    } else if (remainingAttempts === 0) {
+        alert(`Désolé, vous avez épuisé toutes vos tentatives. Le mot secret était "${secretWord}".`);
+        guessInput.disabled = true;
+        guessButton.disabled = true;
+    }
+    guessInput.value = '';
+    guessInput.focus();
+});
+</script>
+
+{% endblock %}
+
+
+
+
+
+

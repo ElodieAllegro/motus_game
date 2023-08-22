@@ -1,0 +1,4 @@
+[build]
+base = "/Applications/MAMP/htdocs/motus_game"
+command = "composer install"
+publish = "public" 
